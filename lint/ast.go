@@ -6,18 +6,24 @@ import (
 	"go/token"
 )
 
-func Walk(r *Rule, src string) []error {
+func Walk(r *Rule, filepath string) []error {
 	var errs []error
 
 	tfset := token.NewFileSet()
-	file, err := parser.ParseFile(tfset, "x.go", src, parser.ParseComments)
+	file, err := parser.ParseFile(tfset, filepath, nil, parser.ParseComments)
 	if err != nil {
 		panic(err)
 	}
 
 	ast.Inspect(file, func(n ast.Node) bool {
+		//log.Printf("visiting %#v", n)
+
 		err := r.Require.Verify(n)
 		if err != nil {
+			if le, ok := err.(*Error); ok {
+				le.Position = tfset.PositionFor(le.Pos, false)
+			}
+
 			errs = append(errs, err)
 		}
 

@@ -1,11 +1,9 @@
 rule_one:
   type: import
+  name: Named Import Rule
+
+  if:
+    path: \/pkg\/(?P<prefix>[a-z0-9]+)\/v(?P<version>[0-9]+)
+
   require:
-    # eg, /pkg/(1: prefix)/v(2: 12)\
-    regexp: \/pkg\/(?P<prefix>[a-z0-9]+)\/v(?P<version>[0-9]+)
-
-    name:
-      # eg "pkgPREFIXv1"
-      template: pkg{{ "${prefix}" | upper }}v${version}
-
-
+    name: pkg{{ "${prefix}" | upper }}v${version}

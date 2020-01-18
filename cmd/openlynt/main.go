@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"flag"
 	stdlog "log"
 	"os"
@@ -43,7 +42,6 @@ func main() {
 		log.Fatalf("couldn't decode yaml: %s", err)
 	}
 
-	buf := new(bytes.Buffer)
 	fail := false
 	filepath.Walk(srcpath, func(fpath string, fi os.FileInfo, err error) error {
 		if err != nil {
@@ -58,24 +56,18 @@ func main() {
 			return err
 		}
 
-		buf.Reset()
-		fp, err := os.Open(fpath)
-		if err != nil {
-			return err
-		}
-
-		_, err = buf.ReadFrom(fp)
-		if err != nil {
-			return err
-		}
-
-		src := buf.String()
 		for i := range rules {
-			errs := lint.Walk(rules[i], src)
-			for i := range errs {
+			errs := lint.Walk(rules[i], fpath)
+			for j := range errs {
 				fail = true
 
-				log.Printf("%s: %s\n", fpath, errs[i])
+				if le, ok := errs[j].(*lint.Error); ok {
+					// violation of a lint rule
+					log.Printf("%s violation in %s:%d: %s", rules[i].Name, fpath, le.Position.Line, errs[j])
+				} else {
+					// error in implementation of lint rule
+					log.Printf("%s error: %s", rules[i].Name, errs[j])
+				}
 			}
 		}
 
