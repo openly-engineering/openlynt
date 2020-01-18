@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"go/ast"
+	"strings"
 	"text/template"
 
 	"github.com/Masterminds/sprig"
@@ -17,7 +18,14 @@ func (as *assignLhs) Match(n ast.Node) bool {
 	stmt := n.(*ast.AssignStmt)
 
 	if as.Name != nil {
-		return as.Name.MatchString(stmt.Lhs[0].(*ast.Ident).Name)
+		for i := range stmt.Lhs {
+			lhs := stmt.Lhs[i]
+
+			// only care if it's an identity, nothing else matters ATM
+			if ident, ok := lhs.(*ast.Ident); ok {
+				return as.Name.MatchString(ident.Name)
+			}
+		}
 	}
 
 	return false
@@ -43,31 +51,39 @@ func (ar *assignRule) Verify(n ast.Node) error {
 
 	ifr, reqr := ar.If, ar.Require
 
+	var errstrs []string
 	if ifr.Lhs != nil && ifr.Lhs.Match(n) {
 		buf := new(bytes.Buffer)
 		must := reqr.Lhs.Template
 
-		path := as.Lhs[0].(*ast.Ident).Name
-		idx := ifr.Lhs.Name.FindStringIndex(path)
-		path = path[idx[0]:idx[1]]
+		for i := range as.Lhs {
+			buf.Reset()
 
-		must = ifr.Lhs.Name.ReplaceAllString(path, must)
+			varname := as.Lhs[i].(*ast.Ident).Name
+			idx := ifr.Lhs.Name.FindStringIndex(varname)
+			varname = varname[idx[0]:idx[1]]
+			must := ifr.Lhs.Name.ReplaceAllString(varname, must)
 
-		tpl, err := template.New("assignRule.VariableName").Funcs(sprig.TxtFuncMap()).Parse(must)
-		if err != nil {
-			return err
-		}
-
-		name := as.Lhs[0].(*ast.Ident).Name
-		if err := tpl.Execute(buf, must); err != nil {
-			return err
-		}
-
-		if name != buf.String() {
-			return &Error{
-				Message: fmt.Sprintf(`expected lhs %s to be named "%s", but it was "%s"`, path, buf.String(), name),
-				Pos:     n.Pos(),
+			tpl, err := template.New("assignRule.VariableName").Funcs(sprig.TxtFuncMap()).Parse(must)
+			if err != nil {
+				return err
 			}
+
+			name := as.Lhs[i].(*ast.Ident).Name
+			if err := tpl.Execute(buf, must); err != nil {
+				return err
+			}
+
+			if name != buf.String() {
+				errstrs = append(errstrs, fmt.Sprintf(`expected lhs %s to be named "%s", but it was "%s"`, varname, buf.String(), name))
+			}
+		}
+	}
+
+	if len(errstrs) > 0 {
+		return &Error{
+			Message: strings.Join(errstrs, "; "),
+			Pos:     n.Pos(),
 		}
 	}
 

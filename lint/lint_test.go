@@ -116,7 +116,11 @@ require:
 	}()
 
 	errs := Walk(r, "testdata/assign_test.go")
-	if len(errs) != 1 {
+	if len(errs) != 2 {
+		for i := range errs {
+			t.Logf("\t%s", errs[i])
+		}
+
 		t.Fatalf("expected 1 errors, got %d", len(errs))
 	}
 }
