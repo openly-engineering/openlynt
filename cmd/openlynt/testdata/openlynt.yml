@@ -1,20 +1,24 @@
-rule_one:
-  type: import
-  name: Named Import Rule
+ignore_paths:
+  - vendor\/
 
-  if:
-    path: \/pkg\/(?P<prefix>[a-z0-9]+)\/v(?P<version>[0-9]+)
+rules:
+  rule_one:
+    type: import
+    name: Named Import Rule
 
-  require:
-    name: pkg{{ "${prefix}" | upper }}v${version}
+    if:
+      path: \/pkg\/(?P<prefix>[a-z0-9]+)\/v(?P<version>[0-9]+)
 
-fixme_todo_rule:
-  type: comment_group
-  name: FIXME/TODO/etc
-  
-  if:
-    text: (TODO|FIXME|XXX)
-  require:
-    # "TODO" must come before the link
-    text: "\\(TODO|FIXME|XXX\\).+https://github.com/openlyinc/openlynt/issues/\\d+"
-    len: 2
+    require:
+      name: pkg{{ "${prefix}" | upper }}v${version}
+
+  fixme_todo_rule:
+    type: comment_group
+    name: FIXME/TODO/etc
+    
+    if:
+      text: (TODO|FIXME|XXX)
+    require:
+      # "TODO" must come before the link
+      text: "\\(TODO|FIXME|XXX\\).+https://github.com/openlyinc/openlynt/issues/\\d+"
+      len: 2

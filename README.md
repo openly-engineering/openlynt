@@ -50,16 +50,18 @@ func main() {
 Our ruleset (`.openlynt.yml`) would be:
 
 ```yaml
-rule_pkgprefix:
-  type: import
-  name: Named Import Rule
-  if:
-    # any import path that contains "pkg/[a-z0-9]+/v\d+", ie "pkg/something/v1"
-    path: regexp: \/pkg\/(?P<prefix>[a-z0-9]+)\/v(?P<version>[0-9]+)
+rules:
 
-  require:
-    # require the named import to match the following, eg "pkgSOMETHINGv1"
-    name: pkg{{ "${prefix}" | upper }}v${version}
+  rule_pkgprefix:
+    type: import
+    name: Named Import Rule
+    if:
+      # any import path that contains "pkg/[a-z0-9]+/v\d+", ie "pkg/something/v1"
+      path: regexp: \/pkg\/(?P<prefix>[a-z0-9]+)\/v(?P<version>[0-9]+)
+
+    require:
+      # require the named import to match the following, eg "pkgSOMETHINGv1"
+      name: pkg{{ "${prefix}" | upper }}v${version}
 ```
 
 

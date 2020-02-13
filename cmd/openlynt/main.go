@@ -6,6 +6,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"regexp"
 
 	"github.com/openlyinc/openlynt/lint"
 	yaml "gopkg.in/yaml.v3"
@@ -32,13 +33,13 @@ func main() {
 		srcpath = flag.Arg(0)
 	}
 
-	var rules map[string]*lint.Rule
+	linter := &lint.Linter{}
 	fp, err := os.Open(rulepath)
 	if err != nil {
 		log.Fatalf("couldn't open config(%s): %s", rulepath, err)
 	}
 
-	if err := yaml.NewDecoder(fp).Decode(&rules); err != nil {
+	if err := yaml.NewDecoder(fp).Decode(&linter); err != nil {
 		log.Fatalf("couldn't decode yaml: %s", err)
 	}
 
@@ -56,23 +57,33 @@ func main() {
 			return err
 		}
 
-		for i := range rules {
-			errs := lint.Walk(rules[i], fpath)
+		for i := range linter.IgnorePaths {
+			rxp := regexp.MustCompile(linter.IgnorePaths[i])
+
+			if rxp.MatchString(fpath) {
+				return nil
+			}
+		}
+
+		for i := range linter.Rules {
+			rule := linter.Rules[i]
+
+			errs := lint.Walk(rule, fpath)
 			for j := range errs {
 				fail = true
 
 				if le, ok := errs[j].(*lint.Error); ok {
 					// violation of a lint rule
 					log.Printf("%s violation in %s:%d: %s",
-						rules[i].Name, fpath, le.Position.Line, errs[j])
+						rule.Name, fpath, le.Position.Line, errs[j])
 				} else if les, ok := errs[j].(*lint.ErrorCollection); ok {
 					for k := range les.Errors {
 						log.Printf("%s violation in %s:%d: %s",
-							rules[i].Name, fpath, les.Errors[k].Position.Line, les.Errors[k])
+							rule.Name, fpath, les.Errors[k].Position.Line, les.Errors[k])
 					}
 				} else {
 					// error in implementation of lint rule
-					log.Printf("%s error: %s", rules[i].Name, errs[j])
+					log.Printf("%s error: %s", rule.Name, errs[j])
 				}
 			}
 		}
