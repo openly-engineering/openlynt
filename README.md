@@ -52,12 +52,14 @@ Our ruleset (`.openlynt.yml`) would be:
 ```yaml
 rule_pkgprefix:
   type: import
-  require:
+  name: Named Import Rule
+  if:
     # any import path that contains "pkg/[a-z0-9]+/v\d+", ie "pkg/something/v1"
-    regexp: \/pkg\/(?P<prefix>[a-z0-9]+)\/v(?P<version>[0-9]+)
-    name:
-      # require the named import to match the following, eg "pkgSOMETHINGv1"
-      template: pkg{{ "${prefix}" | upper }}v${version}
+    path: regexp: \/pkg\/(?P<prefix>[a-z0-9]+)\/v(?P<version>[0-9]+)
+
+  require:
+    # require the named import to match the following, eg "pkgSOMETHINGv1"
+    name: pkg{{ "${prefix}" | upper }}v${version}
 ```
 
 
@@ -76,3 +78,69 @@ $ ./openlynt -path testdata/correct.go -rules testdata/openlynt.yml && echo "ok"
 ok
 ```
 
+## Supported Rules
+
+At the moment, the following rule types are supported.
+
+### `import`
+
+```yaml
+rule_short_name:
+  type: import
+  name: Friendly Rule Name
+
+  if:
+    path: REGEXP
+
+  require:
+    name: "custom-import-name-template"
+```
+
+The `import` rule supports `text/template` replacements with your regexp, as
+well as [sprig](https://github.com/Masterminds/sprig) functions - eg, piping
+a named-regex-match into `upper`, `lower`, `plural`, etc.
+
+### `comment_group`
+
+```yaml
+rule_short_name:
+  type: comment_group
+  name: Friendly Rule Name
+
+  if:
+    text: REGEXP
+
+  require:
+    # optional
+    text: REGEXP
+
+    # optional
+    len: int
+```
+
+The `comment_group` rule supports regexp matches and requirements for the
+entire comment group text. It will match both multiple lines of `//` in
+succession as well as `/*`.
+
+The `len` parameter specifies an optional required minimum-line-count for a
+matching comment. As an example, if you require a `TODO` comment to contain a
+link to an issue tracker _and_ have at least 2 lines of information about the
+problem:
+
+```
+rule_todo:
+  type: comment_group
+  name: TODO Requirement
+  if:
+    text: TODO
+
+  require:
+    text: "https?://github.com/your/project/issues/\\d+"
+    len: 2
+```
+
+A comment like this would fail to pass:
+
+```go
+// TODO: I'm not saying anything useful or linking to the issue.
+```

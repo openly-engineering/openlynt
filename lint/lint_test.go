@@ -92,10 +92,10 @@ require:
 	}
 }
 
-func TestAssign(t *testing.T) {
+func TestAssign_LHS(t *testing.T) {
 	yml := `
 type: assignment
-name: Assignment Rule
+name: LHS Assignment Rule
 if:
   lhs:
     name: (?P<lhs>[a-zA-Z0-9_]+)
@@ -117,6 +117,105 @@ require:
 
 	errs := Walk(r, "testdata/assign_test.go")
 	if len(errs) != 2 {
+		for i := range errs {
+			t.Logf("\t%s", errs[i])
+		}
+
+		t.Fatalf("expected 2 errors, got %d", len(errs))
+	}
+}
+
+func TestCommentGroupGood(t *testing.T) {
+	yml := `
+type: comment_group
+name: Enforce FIXME
+if:
+  text: FIXME
+require:
+  # must contain a link to an open issue
+  text: "https://github.com/openlyinc/openlynt/issues/\\d+"
+  # must have at least N lines of context
+  len: 3
+`
+
+	r := &Rule{}
+	if err := yaml.Unmarshal([]byte(yml), r); err != nil {
+		t.Fatalf("error while unmarshalling: %s", err)
+	}
+
+	defer func() {
+		if x := recover(); x != nil {
+			t.Logf("recovered from panic: %v", x)
+		}
+	}()
+
+	errs := Walk(r, "testdata/comment_good.go")
+	if len(errs) != 0 {
+		for i := range errs {
+			t.Logf("\t%s", errs[i])
+		}
+
+		t.Fatalf("expected 0 errors, got %d", len(errs))
+	}
+}
+
+func TestCommentGroupBad(t *testing.T) {
+	yml := `
+type: comment_group
+name: Enforce FIXME
+if:
+  text: FIXME
+require:
+  # must contain a link to an open issue
+  text: "https://github.com/openlyinc/openlynt/issues/\\d+"
+`
+
+	r := &Rule{}
+	if err := yaml.Unmarshal([]byte(yml), r); err != nil {
+		t.Fatalf("error while unmarshalling: %s", err)
+	}
+
+	defer func() {
+		if x := recover(); x != nil {
+			t.Logf("recovered from panic: %v", x)
+		}
+	}()
+
+	errs := Walk(r, "testdata/comment_bad.go")
+	if len(errs) != 1 {
+		for i := range errs {
+			t.Logf("\t%s", errs[i])
+		}
+
+		t.Fatalf("expected 1 errors, got %d", len(errs))
+	}
+}
+
+func TestBytesBuffer(t *testing.T) {
+	t.SkipNow()
+
+	yml := `
+type: unary_expr
+name: bytes.Buffer rule
+if:
+  selector: "\\&bytes\\.Buffer"
+require:
+  warn: Use new(bytes.Buffer) instead
+`
+
+	r := &Rule{}
+	if err := yaml.Unmarshal([]byte(yml), r); err != nil {
+		t.Fatalf("error while unmarshalling: %s", err)
+	}
+
+	defer func() {
+		if x := recover(); x != nil {
+			t.Logf("recovered from panic: %v", x)
+		}
+	}()
+
+	errs := Walk(r, "testdata/bytesbuffer_test.go")
+	if len(errs) != 1 {
 		for i := range errs {
 			t.Logf("\t%s", errs[i])
 		}

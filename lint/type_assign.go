@@ -49,9 +49,9 @@ func (ar *assignRule) Verify(n ast.Node) error {
 		return nil
 	}
 
+	var errstrs []string
 	ifr, reqr := ar.If, ar.Require
 
-	var errstrs []string
 	if ifr.Lhs != nil && ifr.Lhs.Match(n) {
 		buf := new(bytes.Buffer)
 		must := reqr.Lhs.Template

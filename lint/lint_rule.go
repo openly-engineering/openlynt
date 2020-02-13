@@ -14,9 +14,9 @@ var (
 )
 
 const (
-	RuleImport   = "import"
-	RuleAssign   = "assignment"
-	RuleFunction = "func"
+	RuleImport       = "import"
+	RuleAssign       = "assignment"
+	RuleCommentGroup = "comment_group"
 )
 
 type Requirement interface {
@@ -58,6 +58,10 @@ func (r *Rule) UnmarshalYAML(n *yaml.Node) error {
 		r.Require = req
 	case RuleAssign:
 		req := &assignRule{}
+		marshalhack(m, req)
+		r.Require = req
+	case RuleCommentGroup:
+		req := &commentGroupRule{}
 		marshalhack(m, req)
 		r.Require = req
 	default:

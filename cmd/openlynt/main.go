@@ -63,7 +63,13 @@ func main() {
 
 				if le, ok := errs[j].(*lint.Error); ok {
 					// violation of a lint rule
-					log.Printf("%s violation in %s:%d: %s", rules[i].Name, fpath, le.Position.Line, errs[j])
+					log.Printf("%s violation in %s:%d: %s",
+						rules[i].Name, fpath, le.Position.Line, errs[j])
+				} else if les, ok := errs[j].(*lint.ErrorCollection); ok {
+					for k := range les.Errors {
+						log.Printf("%s violation in %s:%d: %s",
+							rules[i].Name, fpath, les.Errors[k].Position.Line, les.Errors[k])
+					}
 				} else {
 					// error in implementation of lint rule
 					log.Printf("%s error: %s", rules[i].Name, errs[j])
