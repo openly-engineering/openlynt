@@ -16,7 +16,7 @@ var (
 	srcpath  string
 	rulepath string
 
-	log = stdlog.New(os.Stderr, "", stdlog.Ltime)
+	log = stdlog.New(os.Stderr, "", 0)
 )
 
 func main() {
@@ -65,6 +65,7 @@ func main() {
 			}
 		}
 
+		set := &lint.Violations{}
 		for i := range linter.Rules {
 			rule := linter.Rules[i]
 
@@ -72,20 +73,30 @@ func main() {
 			for j := range errs {
 				fail = true
 
-				if le, ok := errs[j].(*lint.Error); ok {
-					// violation of a lint rule
-					log.Printf("%s violation in %s:%d: %s",
-						rule.Name, fpath, le.Position.Line, errs[j])
-				} else if les, ok := errs[j].(*lint.ErrorCollection); ok {
-					for k := range les.Errors {
-						log.Printf("%s violation in %s:%d: %s",
-							rule.Name, fpath, les.Errors[k].Position.Line, les.Errors[k])
+				if le, ok := errs[j].(*lint.Violation); ok {
+					set.Violations = append(set.Violations, le)
+				} else if les, ok := errs[j].(*lint.Violations); ok {
+					for k := range les.Violations {
+						set.Violations = append(set.Violations, les.Violations[k])
 					}
 				} else {
 					// error in implementation of lint rule
-					log.Printf("%s error: %s", rule.Name, errs[j])
+					log.Printf("[openlynt] %s error: %s", rule.Name, errs[j])
 				}
 			}
+		}
+
+		if linter.Revisions.From != "" {
+			set, err = lint.FilterByRevision(set, linter.Revisions.From, linter.Revisions.To)
+			if err != nil {
+				log.Fatalf("failed to filter by revision: %s", err)
+			}
+		}
+
+		for i := range set.Violations {
+			v := set.Violations[i]
+
+			logViolation(v.Rule, v, v.File)
 		}
 
 		return nil
@@ -94,4 +105,13 @@ func main() {
 	if fail {
 		os.Exit(1)
 	}
+}
+
+func logViolation(r *lint.Rule, v *lint.Violation, path string) {
+	log.Printf(
+		"%s:%d violation of %s: %s",
+		path, v.Position.Line,
+		r.Name,
+		v.Error(),
+	)
 }

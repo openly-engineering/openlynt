@@ -81,7 +81,7 @@ func (ar *assignRule) Verify(n ast.Node) error {
 	}
 
 	if len(errstrs) > 0 {
-		return &Error{
+		return &Violation{
 			Message: strings.Join(errstrs, "; "),
 			Pos:     n.Pos(),
 		}

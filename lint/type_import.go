@@ -57,7 +57,7 @@ func (i *importRule) Verify(n ast.Node) error {
 		}
 
 		if name != buf.String() {
-			return &Error{
+			return &Violation{
 				Message: fmt.Sprintf(`expected import %s to be named "%s", but it was "%s"`, in.Path.Value, buf.String(), name),
 				Pos:     n.Pos(),
 			}

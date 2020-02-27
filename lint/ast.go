@@ -18,13 +18,17 @@ func Walk(r *Rule, filepath string) []error {
 	ast.Inspect(file, func(n ast.Node) bool {
 		err := r.Require.Verify(n)
 		if err != nil {
-			if le, ok := err.(*Error); ok {
+			if le, ok := err.(*Violation); ok {
 				le.Position = tfset.PositionFor(le.Pos, false)
+				le.File = filepath
+				le.Rule = r
 			}
 
-			if les, ok := err.(*ErrorCollection); ok {
-				for i := range les.Errors {
-					les.Errors[i].Position = tfset.PositionFor(les.Errors[i].Pos, false)
+			if les, ok := err.(*Violations); ok {
+				for i := range les.Violations {
+					les.Violations[i].Position = tfset.PositionFor(les.Violations[i].Pos, false)
+					les.Violations[i].File = filepath
+					les.Violations[i].Rule = r
 				}
 			}
 
