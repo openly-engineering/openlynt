@@ -2,12 +2,14 @@ package main
 
 import (
 	"flag"
+	"io"
 	stdlog "log"
 	"os"
 	"path"
 	"path/filepath"
 	"regexp"
 
+	"github.com/golangci/revgrep"
 	"github.com/openlyinc/openlynt/lint"
 	yaml "gopkg.in/yaml.v3"
 )
@@ -44,6 +46,18 @@ func main() {
 
 	if err := yaml.NewDecoder(fp).Decode(&linter); err != nil {
 		log.Fatalf("couldn't decode yaml: %s", err)
+	}
+
+	var (
+		patch    io.Reader
+		newfiles []string
+	)
+
+	if linter.Revisions.From != "" && revFilter {
+		patch, newfiles, err = revgrep.GitPatch(linter.Revisions.From, linter.Revisions.To)
+		if err != nil {
+			log.Fatalf("[openlynt] revision filter specified, but couldn't generate a git patch: %s", err)
+		}
 	}
 
 	fail := false
@@ -87,10 +101,10 @@ func main() {
 			}
 		}
 
-		if linter.Revisions.From != "" && revFilter {
+		if patch != nil {
 			cnt := len(set.Violations)
 
-			set, err = lint.FilterByRevision(set, linter.Revisions.From, linter.Revisions.To)
+			set, err = lint.FilterByRevision(patch, newfiles, set)
 			if err != nil {
 				log.Fatalf("[openlynt] failed to filter by revision: %s", err)
 			}
