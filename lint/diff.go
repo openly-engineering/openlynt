@@ -16,8 +16,6 @@ func FilterByRevision(vs *Violations, from, to string) (*Violations, error) {
 		RevisionFrom: from,
 		RevisionTo:   to,
 		Patch:        gp,
-		//Debug:        os.Stdout,
-		//Regexp:       "",
 	}
 
 	if err := c.Prepare(); err != nil {

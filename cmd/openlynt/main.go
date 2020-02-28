@@ -16,12 +16,15 @@ var (
 	srcpath  string
 	rulepath string
 
+	revFilter bool
+
 	log = stdlog.New(os.Stderr, "", 0)
 )
 
 func main() {
 	flag.StringVar(&srcpath, "path", "", "path to parse .go files")
 	flag.StringVar(&rulepath, "rules", ".openlynt.yml", "path to yaml config")
+	flag.BoolVar(&revFilter, "revfilter", true, "enable revision filter; enabled by default")
 	flag.Parse()
 
 	if srcpath == "" {
@@ -71,8 +74,6 @@ func main() {
 
 			errs := lint.Walk(rule, fpath)
 			for j := range errs {
-				fail = true
-
 				if le, ok := errs[j].(*lint.Violation); ok {
 					set.Violations = append(set.Violations, le)
 				} else if les, ok := errs[j].(*lint.Violations); ok {
@@ -86,14 +87,21 @@ func main() {
 			}
 		}
 
-		if linter.Revisions.From != "" {
+		if linter.Revisions.From != "" && revFilter {
+			cnt := len(set.Violations)
+
 			set, err = lint.FilterByRevision(set, linter.Revisions.From, linter.Revisions.To)
 			if err != nil {
-				log.Fatalf("failed to filter by revision: %s", err)
+				log.Fatalf("[openlynt] failed to filter by revision: %s", err)
+			}
+
+			if cnt > len(set.Violations) {
+				log.Printf("[openlynt] filtered %d violations in %s due to revision limits", cnt-len(set.Violations), fpath)
 			}
 		}
 
 		for i := range set.Violations {
+			fail = true
 			v := set.Violations[i]
 
 			logViolation(v.Rule, v, v.File)
