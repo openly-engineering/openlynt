@@ -33,7 +33,7 @@ func (r *commentGroupRule) Verify(n ast.Node) error {
 		return nil
 	}
 
-	errs := &ErrorCollection{}
+	errs := &Violations{}
 	for i := range astfi.Comments {
 		cg := astfi.Comments[i]
 
@@ -55,7 +55,7 @@ func (r *commentGroupRule) Verify(n ast.Node) error {
 			}
 
 			if r.Require.Len > 0 && lines < r.Require.Len {
-				errs.Errors = append(errs.Errors, &Error{
+				errs.Violations = append(errs.Violations, &Violation{
 					Message: fmt.Sprintf(`expected at least %d lines of context but have %d`, r.Require.Len, lines),
 					Pos:     cg.Pos(),
 				})
@@ -63,7 +63,7 @@ func (r *commentGroupRule) Verify(n ast.Node) error {
 			}
 
 			if !r.Require.Text.MatchString(cg.Text()) {
-				errs.Errors = append(errs.Errors, &Error{
+				errs.Violations = append(errs.Violations, &Violation{
 					Message: fmt.Sprintf(`expected comment to match /%s/`, r.Require.Text.String()),
 					Pos:     cg.Pos(),
 				})
@@ -71,7 +71,7 @@ func (r *commentGroupRule) Verify(n ast.Node) error {
 		}
 	}
 
-	if len(errs.Errors) > 0 {
+	if len(errs.Violations) > 0 {
 		return errs
 	}
 

@@ -16,12 +16,15 @@ var (
 	srcpath  string
 	rulepath string
 
-	log = stdlog.New(os.Stderr, "", stdlog.Ltime)
+	revFilter bool
+
+	log = stdlog.New(os.Stderr, "", 0)
 )
 
 func main() {
 	flag.StringVar(&srcpath, "path", "", "path to parse .go files")
 	flag.StringVar(&rulepath, "rules", ".openlynt.yml", "path to yaml config")
+	flag.BoolVar(&revFilter, "revfilter", true, "enable revision filter; enabled by default")
 	flag.Parse()
 
 	if srcpath == "" {
@@ -65,27 +68,43 @@ func main() {
 			}
 		}
 
+		set := &lint.Violations{}
 		for i := range linter.Rules {
 			rule := linter.Rules[i]
 
 			errs := lint.Walk(rule, fpath)
 			for j := range errs {
-				fail = true
-
-				if le, ok := errs[j].(*lint.Error); ok {
-					// violation of a lint rule
-					log.Printf("%s violation in %s:%d: %s",
-						rule.Name, fpath, le.Position.Line, errs[j])
-				} else if les, ok := errs[j].(*lint.ErrorCollection); ok {
-					for k := range les.Errors {
-						log.Printf("%s violation in %s:%d: %s",
-							rule.Name, fpath, les.Errors[k].Position.Line, les.Errors[k])
+				if le, ok := errs[j].(*lint.Violation); ok {
+					set.Violations = append(set.Violations, le)
+				} else if les, ok := errs[j].(*lint.Violations); ok {
+					for k := range les.Violations {
+						set.Violations = append(set.Violations, les.Violations[k])
 					}
 				} else {
 					// error in implementation of lint rule
-					log.Printf("%s error: %s", rule.Name, errs[j])
+					log.Printf("[openlynt] %s error: %s", rule.Name, errs[j])
 				}
 			}
+		}
+
+		if linter.Revisions.From != "" && revFilter {
+			cnt := len(set.Violations)
+
+			set, err = lint.FilterByRevision(set, linter.Revisions.From, linter.Revisions.To)
+			if err != nil {
+				log.Fatalf("[openlynt] failed to filter by revision: %s", err)
+			}
+
+			if cnt > len(set.Violations) {
+				log.Printf("[openlynt] filtered %d violations in %s due to revision limits", cnt-len(set.Violations), fpath)
+			}
+		}
+
+		for i := range set.Violations {
+			fail = true
+			v := set.Violations[i]
+
+			logViolation(v.Rule, v, v.File)
 		}
 
 		return nil
@@ -94,4 +113,13 @@ func main() {
 	if fail {
 		os.Exit(1)
 	}
+}
+
+func logViolation(r *lint.Rule, v *lint.Violation, path string) {
+	log.Printf(
+		"%s:%d violation of %s: %s",
+		path, v.Position.Line,
+		r.Name,
+		v.Error(),
+	)
 }
