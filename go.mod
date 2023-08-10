@@ -5,8 +5,7 @@ go 1.19
 require (
 	github.com/Masterminds/sprig v2.22.0+incompatible
 	github.com/golangci/revgrep v0.0.0-20180812185044-276a5c0a1039
-	github.com/openlyinc/openlynt v0.0.1
-	gopkg.in/yaml.v3 v3.0.0-20191120175047-4206685974f2
+	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (
@@ -17,5 +16,7 @@ require (
 	github.com/imdario/mergo v0.3.8 // indirect
 	github.com/mitchellh/copystructure v1.0.0 // indirect
 	github.com/mitchellh/reflectwalk v1.0.0 // indirect
+	github.com/stretchr/testify v1.8.4 // indirect
 	golang.org/x/crypto v0.0.0-20200109152110-61a87790db17 // indirect
+	gopkg.in/yaml.v2 v2.4.0 // indirect
 )

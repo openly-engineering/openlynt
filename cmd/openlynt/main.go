@@ -10,7 +10,7 @@ import (
 	"regexp"
 
 	"github.com/golangci/revgrep"
-	"github.com/openlyinc/openlynt/lint"
+	"go.openly.dev/openlynt/lint"
 	yaml "gopkg.in/yaml.v3"
 )
 
