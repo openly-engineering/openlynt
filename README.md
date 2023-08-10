@@ -10,7 +10,7 @@ Supported rules:
 
 ## Install
 
-    go get -u github.com/openlyinc/openlynt/cmd/openlynt
+    go get -u go.openly.dev/openlynt/cmd/openlynt
 
 ## Usage
 

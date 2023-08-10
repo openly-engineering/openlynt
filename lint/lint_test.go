@@ -133,7 +133,7 @@ if:
   text: FIXME
 require:
   # must contain a link to an open issue
-  text: "https://github.com/openlyinc/openlynt/issues/\\d+"
+  text: "https://github.com/openly-engineering/openlynt/issues/\\d+"
   # must have at least N lines of context
   len: 3
 `
@@ -167,7 +167,7 @@ if:
   text: FIXME
 require:
   # must contain a link to an open issue
-  text: "https://github.com/openlyinc/openlynt/issues/\\d+"
+  text: "https://github.com/openly-engineering/openlynt/issues/\\d+"
 `
 
 	r := &Rule{}

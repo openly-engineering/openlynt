@@ -20,5 +20,5 @@ rules:
       text: (TODO|FIXME|XXX)
     require:
       # "TODO" must come before the link
-      text: "\\(TODO|FIXME|XXX\\).+https://github.com/openlyinc/openlynt/issues/\\d+"
+      text: "\\(TODO|FIXME|XXX\\).+https://github.com/openly-engineering/openlynt/issues/\\d+"
       len: 2
