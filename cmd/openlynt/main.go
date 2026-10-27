@@ -1,8 +1,8 @@
 package main
 
 import (
+	"context"
 	"flag"
-	"io"
 	stdlog "log"
 	"os"
 	"path"
@@ -48,13 +48,10 @@ func main() {
 		log.Fatalf("couldn't decode yaml: %s", err)
 	}
 
-	var (
-		patch    io.Reader
-		newfiles []string
-	)
+	var checker *revgrep.Checker
 
 	if linter.Revisions.From != "" && revFilter {
-		patch, newfiles, err = revgrep.GitPatch(linter.Revisions.From, linter.Revisions.To)
+		checker, err = lint.NewRevisionChecker(context.Background(), linter.Revisions.From, linter.Revisions.To)
 		if err != nil {
 			log.Fatalf("[openlynt] revision filter specified, but couldn't generate a git patch: %s", err)
 		}
@@ -101,10 +98,10 @@ func main() {
 			}
 		}
 
-		if patch != nil {
+		if checker != nil {
 			cnt := len(set.Violations)
 
-			set, err = lint.FilterByRevision(patch, newfiles, set)
+			set, err = lint.FilterByRevision(checker, set)
 			if err != nil {
 				log.Fatalf("[openlynt] failed to filter by revision: %s", err)
 			}
